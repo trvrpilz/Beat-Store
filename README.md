@@ -1,17 +1,24 @@
 # Trevor Pilz Beat Store
 
-A responsive beat-licensing storefront for Trevor Pilz with Stripe Checkout integration.
+A responsive beat-licensing storefront deployed on Railway with Stripe-hosted Checkout integration.
 
-## First milestone
+## Current milestone
 - Responsive storefront and beat catalog
-- Four license tiers
-- Stripe Checkout endpoint
-- Payment success page
-- Railway-ready Next.js app
+- Four configurable license tiers
+- Server-side price validation
+- Stripe Checkout Sessions endpoint
+- Signed Stripe webhook handler for payment confirmation
+- Safe `PAYMENTS_ENABLED` launch gate
+- Railway deployment
 
 ## Environment variables
-- `STRIPE_SECRET_KEY` — set privately in Railway; never commit it
-- `PUBLIC_URL` — deployed site URL
+- `PUBLIC_URL` — deployed public URL
+- `PAYMENTS_ENABLED` — must be exactly `true` to permit checkout; keep `false` until the real catalog and fulfillment are ready
+- `STRIPE_RESTRICTED_KEY` — preferred least-privilege Stripe restricted key; store only in Railway
+- `STRIPE_WEBHOOK_SECRET` — Stripe endpoint signing secret; store only in Railway
+- `STRIPE_SECRET_KEY` — legacy fallback only; prefer `STRIPE_RESTRICTED_KEY`
 
-## Next milestone
-Database-backed beat/admin management, private audio storage, Stripe webhook verification, automatic license generation, protected downloads, order history, and email delivery.
+Never commit Stripe credentials to GitHub.
+
+## Required launch milestone
+Before enabling payments, add the real beat files/catalog and complete webhook-driven fulfillment: persist paid orders, generate the appropriate license document, issue protected downloads, and deliver purchase confirmation. Fulfillment must not depend on the success page.
