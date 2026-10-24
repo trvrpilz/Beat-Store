@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { persistVerifiedOrder } from '../../../../lib/orders';
 
 export const runtime = 'nodejs';
 
@@ -29,29 +30,38 @@ export async function POST(request) {
     return new Response('Invalid Stripe signature.', { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-    const session = event.data.object;
+  try {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      const session = event.data.object;
 
-    if (session.payment_status !== 'unpaid') {
-      console.log(JSON.stringify({
-        type: 'beat_store_payment_confirmed',
-        sessionId: session.id,
-        beatId: session.metadata?.beatId || null,
-        licenseName: session.metadata?.licenseName || null
-      }));
+      if (session.payment_status === 'paid') {
+        const order = await persistVerifiedOrder(session);
 
-      // Fulfillment is intentionally driven from this verified webhook.
-      // The next milestone persists the order and issues protected downloads/license documents.
+        console.log(JSON.stringify({
+          type: 'beat_store_order_persisted',
+          orderId: order.id,
+          sessionId: session.id,
+          beatId: session.metadata?.beatId || null,
+          licenseName: session.metadata?.licenseName || null,
+          fulfillmentStatus: order.fulfillment_status
+        }));
+      }
     }
-  }
 
-  if (event.type === 'checkout.session.async_payment_failed') {
-    const session = event.data.object;
-    console.warn(JSON.stringify({
-      type: 'beat_store_payment_failed',
-      sessionId: session.id
-    }));
-  }
+    if (event.type === 'checkout.session.async_payment_failed') {
+      const session = event.data.object;
+      console.warn(JSON.stringify({
+        type: 'beat_store_payment_failed',
+        sessionId: session.id
+      }));
+    }
 
-  return Response.json({ received: true });
+    return Response.json({ received: true });
+  } catch (error) {
+    console.error('beat_store_webhook_processing_failed', error?.message || 'unknown_error');
+
+    // Returning a non-2xx response tells Stripe to retry the verified event,
+    // so a paid order is not silently lost when persistence is unavailable.
+    return new Response('Webhook processing failed.', { status: 503 });
+  }
 }
