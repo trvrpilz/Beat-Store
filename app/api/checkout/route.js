@@ -1,4 +1,6 @@
 import Stripe from 'stripe';
+import { newAccessToken, hashAccessToken } from '../../../lib/order-access.mjs';
+import { deliveryFiles, storageConfigured } from '../../../lib/delivery';
 
 const catalog = {
   'midnight-run': 'MIDNIGHT RUN',
@@ -32,6 +34,10 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid beat or license.' }, { status: 400 });
     }
 
+    if (!process.env.DATABASE_URL || !process.env.STRIPE_WEBHOOK_SECRET || !storageConfigured() || !deliveryFiles(beatId, licenseName)) {
+      return Response.json({ error: 'This beat is not ready for purchase yet.' }, { status: 503 });
+    }
+    const token = newAccessToken();
     const stripe = new Stripe(restrictedKey);
     const origin = process.env.PUBLIC_URL || new URL(request.url).origin;
 
@@ -52,9 +58,9 @@ export async function POST(request) {
           }
         }
       ],
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}#access=${token}`,
       cancel_url: `${origin}/#beats`,
-      metadata: { beatId, beatTitle, licenseName }
+      metadata: { beatId, beatTitle, licenseName, accessTokenHash: hashAccessToken(token) }
     });
 
     return Response.json({ url: session.url });
