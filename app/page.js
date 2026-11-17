@@ -115,7 +115,7 @@ export default function Home() {
         <p>Independent production built for artists who want records with character. Preview a beat, choose the rights you need, and license it directly.</p>
       </section>
 
-      <footer>© 2026 TREVOR PILZ <span>BEATS · LICENSING · CONTACT</span></footer>
+      <footer>© 2026 TREVOR PILZ <span>BEATS · LICENSING · <a href="/studio">OWNER STUDIO</a></span></footer>
     </main>
   );
 }

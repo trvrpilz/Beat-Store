@@ -96,3 +96,8 @@ not object existence or the legal suitability of uploaded license documents.
 - Keep `PAYMENTS_ENABLED=false` until the complete flow passes.
 
 Run `npm ci`, `npm test`, and `npm run build` before deploying changes.
+
+## Owner studio
+Visit /studio and sign in using the private STUDIO_PASSWORD configured in Railway. Sessions use secure HttpOnly cookies and expire in eight hours. Upload MP3/WAV audio, MP3 previews, ZIP stems (250 MB per file), or JPG/PNG/WebP artwork (10 MB). Files are streamed to private storage; metadata is persisted in PostgreSQL. Draft uploads do not publish to the storefront or enable checkout. Planned prices are informational until approved license and checkout mappings are configured.
+
+Set PUBLIC_URL to the canonical HTTPS origin and S3_* variables to Railway bucket references. Rotating STUDIO_PASSWORD invalidates sessions. Keep PAYMENTS_ENABLED=false until end-to-end purchase fulfillment is complete.
